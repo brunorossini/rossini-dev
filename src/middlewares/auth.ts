@@ -1,8 +1,7 @@
-import { NextFunction } from "express";
+import { NextFunction, Response } from "express";
 import * as admin from "firebase-admin";
-import { Request, Response } from "express";
 
-export default async (req: Request, res: Response, next: NextFunction) => {
+export default async (req: any, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers["authorization"];
 
@@ -10,10 +9,14 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       return res.status(401).json({ error: "Token not provided" });
 
     const [, token] = authHeader.split(" ");
-    await admin.auth().verifyIdToken(token);
+    const decodedToken = await admin.auth().verifyIdToken(token);
 
-    return next();
+    req.locals = { user: decodedToken }
+
+    next();
+    return;
   } catch (error) {
-    return res.status(401).json({ error: "Token invalid" });
+    res.status(401).json({ error: "Token invalid" });
+    return;
   }
 };
